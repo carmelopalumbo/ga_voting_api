@@ -19,10 +19,6 @@ class MunicipalityAdmin(admin.ModelAdmin):
         ('Informazioni Principali', {
             'fields': ('name', 'ipa_code')
         }),
-        ('Altro', {
-            'fields': ('logo_url',),
-            'classes': ('collapse',)
-        }),
     )
     
     readonly_fields = ('created_at',)
@@ -52,15 +48,13 @@ class CitizenAdmin(admin.ModelAdmin):
         ('Dati Criptati', {
             'fields': (
                 'fiscal_code_encrypted',
-                'first_name_encrypted',
-                'last_name_encrypted',
                 'email_encrypted'
             ),
             'classes': ('collapse',),
             'description': 'Dati personali criptati (non leggibili direttamente)'
         }),
         ('Metadata', {
-            'fields': ('registration_date', 'is_active')
+            'fields': ('registration_date',)
         }),
     )
     

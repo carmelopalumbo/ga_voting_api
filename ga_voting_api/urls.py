@@ -2,8 +2,18 @@
 URL configuration for ga_voting_api project.
 """
 from django.contrib import admin
+from django.contrib.auth.models import User, Group
 from django.urls import path, include
 from django.http import JsonResponse
+
+# Unregister default Django User and Group models
+admin.site.unregister(User)
+admin.site.unregister(Group)
+
+# Customize admin site
+admin.site.site_header = "Voting System - Amministrazione"
+admin.site.site_title = "Voting Admin"
+admin.site.index_title = "Gestione Sistema di Votazione"
 
 
 def health_check(request):
