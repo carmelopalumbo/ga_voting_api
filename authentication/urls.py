@@ -2,12 +2,12 @@
 Authentication app URLs - SPID login and callback
 """
 from django.urls import path
-from . import views
+from .views import SPIDLoginView, SPIDCallbackView
 
 app_name = 'authentication'
 
 urlpatterns = [
     # SPID authentication flow
-    path('spid/login/', views.spid_login, name='spid_login'),
-    path('spid/callback/', views.spid_callback, name='spid_callback'),
+    path('spid/login/', SPIDLoginView.as_view(), name='spid_login'),
+    path('spid/callback/', SPIDCallbackView.as_view(), name='spid_callback'),
 ]

@@ -1,18 +1,71 @@
 """
-Voting app URLs - Active session, vote, results
+Voting views - Active session, cast vote, results
 """
-from django.urls import path
-from .views import ActiveVotingSessionView, CastVoteView, VotingResultsView
+from django.http import JsonResponse
+from django.views import View
 
-app_name = 'voting'
 
-urlpatterns = [
-    # Active voting session with options and has_voted check
-    path('voting/active/', ActiveVotingSessionView.as_view(), name='active_voting_session'),
+class ActiveVotingSessionView(View):
+    """
+    Get active voting session with options and user's voting status.
     
-    # Cast vote
-    path('voting/vote/', CastVoteView.as_view(), name='cast_vote'),
+    Returns:
+    - voting_session: active session details
+    - options: list of voting options
+    - has_voted: boolean indicating if current user has already voted
+    """
     
-    # Results (TODO: implement later)
-    path('voting/results/<int:session_id>/', VotingResultsView.as_view(), name='voting_results'),
-]
+    def get(self, request):
+        """
+        Get currently active voting session.
+        
+        TODO: Implement
+        """
+        return JsonResponse({
+            'message': 'Active voting session endpoint - TODO: implement',
+            'status': 'not_implemented'
+        }, status=501)
+
+
+class CastVoteView(View):
+    """
+    Cast a vote for a specific option.
+    
+    Request body:
+    - voting_session_id: int
+    - option_id: int
+    
+    Returns:
+    - success: boolean
+    - message: success/error message
+    - timestamp: when vote was cast
+    """
+    
+    def post(self, request):
+        """
+        Cast a vote with atomic transaction.
+        
+        TODO: Implement with atomic transaction
+        """
+        return JsonResponse({
+            'message': 'Cast vote endpoint - TODO: implement',
+            'status': 'not_implemented'
+        }, status=501)
+
+
+class VotingResultsView(View):
+    """
+    Get voting results for a specific session.
+    Only available if results are public.
+    """
+    
+    def get(self, request, session_id):
+        """
+        Get results for a voting session.
+        
+        TODO: Implement later
+        """
+        return JsonResponse({
+            'message': 'Voting results endpoint - TODO: implement later',
+            'status': 'not_implemented'
+        }, status=501)
