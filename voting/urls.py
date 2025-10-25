@@ -2,11 +2,14 @@
 Voting app URLs - Active session, vote, results
 """
 from django.urls import path
-from .views import ActiveVotingSessionView, CastVoteView, VotingResultsView
+from .views import VotingSessionListView, ActiveVotingSessionView, CastVoteView, VotingResultsView
 
 app_name = 'voting'
 
 urlpatterns = [
+    # List all active voting sessions (public)
+    path('voting/sessions/', VotingSessionListView.as_view(), name='voting_sessions_list'),
+    
     # Active voting session with options and has_voted check
     path('voting/active/', ActiveVotingSessionView.as_view(), name='active_voting_session'),
     
