@@ -35,9 +35,29 @@ class OptionSerializer(serializers.ModelSerializer):
             'id',
             'text',
             'display_order',
-            'vote_count',
-            'image_url'
+            'image_url',
+            'vote_count'
         ]
+    
+    def get_vote_count(self, obj):
+        """
+        Return vote count only if results are public.
+        Otherwise return None to preserve anonymity during voting.
+        """
+        # Check if voting_session is available
+        if not hasattr(obj, 'voting_session') or not obj.voting_session:
+            return None
+        
+        voting_session = obj.voting_session
+        
+        # Only show results if:
+        # 1. Results are marked as public
+        # 2. OR voting session has ended
+        if voting_session.results_public or not voting_session.is_open():
+            return obj.get_vote_count()
+        
+        return None
+
 
 class VotingSessionSerializer(serializers.ModelSerializer):
     """
@@ -70,6 +90,16 @@ class VotingSessionSerializer(serializers.ModelSerializer):
     def get_is_open(self, obj):
         """Check if voting is currently open."""
         return obj.is_open()
+    
+    def get_total_voters(self, obj):
+        """
+        Return total number of people who voted.
+        Only shown if results are public.
+        """
+        if obj.results_public or not obj.is_open():
+            return obj.voters.count()
+        return None
+
 
 class VotingSessionDetailSerializer(VotingSessionSerializer):
     """
