@@ -34,8 +34,8 @@ class OptionSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'text',
-            'description',
             'display_order',
+            'vote_count',
             'image_url'
         ]
 
@@ -63,6 +63,7 @@ class VotingSessionSerializer(serializers.ModelSerializer):
             'is_open',
             'results_public',
             'options',
+            'total_voters',
             'created_at'
         ]
     

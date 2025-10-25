@@ -12,7 +12,7 @@ class OptionInline(admin.TabularInline):
     """
     model = Option
     extra = 2
-    fields = ('text', 'description', 'display_order', 'image_url')
+    fields = ('text', 'display_order', 'image_url')
     ordering = ('display_order',)
 
 
@@ -83,12 +83,12 @@ class OptionAdmin(admin.ModelAdmin):
     """
     list_display = ('text', 'voting_session', 'display_order', 'vote_count')
     list_filter = ('voting_session',)
-    search_fields = ('text', 'description', 'voting_session__title')
+    search_fields = ('text', 'voting_session__title')
     ordering = ('voting_session', 'display_order')
     
     fieldsets = (
         ('Informazioni', {
-            'fields': ('voting_session', 'text', 'description')
+            'fields': ('voting_session', 'text',)
         }),
         ('Visualizzazione', {
             'fields': ('display_order', 'image_url')
