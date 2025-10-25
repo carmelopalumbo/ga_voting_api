@@ -157,14 +157,13 @@ REST_FRAMEWORK = {
     'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.JSONParser',
     ],
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
-    ],
+    # No authentication by default - we handle it manually per view
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 100,
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
 }
 
 
@@ -178,11 +177,10 @@ CORS_ALLOW_CREDENTIALS = True
 
 
 # SPID/DigitID Configuration
-SPID_TENANT = os.getenv('SPID_TENANT', 'votazioni-test')
-SPID_POLICY = os.getenv('SPID_POLICY', 'B2C_1_SignUpSignIn_SPID')
+SPID_TENANT = os.getenv('SPID_TENANT', 'idppatest')  # 'idppatest' for test, 'idppa' for production
+SPID_POLICY = os.getenv('SPID_POLICY', 'B2C_1A_SIGNUP_SIGNIN_SPID')  # Fixed policy from e-Fil
 SPID_CLIENT_ID = os.getenv('SPID_CLIENT_ID', '')
-SPID_IPA_CODE = os.getenv('SPID_IPA_CODE', '')
-SPID_REDIRECT_URI = os.getenv('SPID_REDIRECT_URI', 'http://localhost:8000/api/auth/spid/callback')
+SPID_REDIRECT_URI = os.getenv('SPID_REDIRECT_URI', 'http://localhost:8000/api/auth/spid/callback/')
 
 # Base URL for SPID authentication
 SPID_BASE_URL = f"https://{SPID_TENANT}.b2clogin.com/{SPID_TENANT}.onmicrosoft.com/{SPID_POLICY}/oauth2/v2.0"
@@ -194,6 +192,13 @@ ENCRYPTION_KEY = os.getenv('ENCRYPTION_KEY', 'change-this-in-production')
 
 # Frontend URL (for redirects after SPID login)
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+
+
+# Session Configuration
+SESSION_COOKIE_AGE = 60 * 60 * 24  # 24 hours
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
 
 
 # Logging Configuration
