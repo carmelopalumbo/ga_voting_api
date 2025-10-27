@@ -1,17 +1,16 @@
 """
-Voting app URLs - Active session, vote, results
+Voting app URLs - Sessions list/detail, vote, results
 """
 from django.urls import path
-from .views import VotingSessionListView, ActiveVotingSessionView, CastVoteView, VotingResultsView
+from .views import VotingSessionListView, CastVoteView, VotingResultsView
 
 app_name = 'voting'
 
 urlpatterns = [
-    # List all active voting sessions (public)
-    path('voting/sessions/', VotingSessionListView.as_view(), name='voting_sessions_list'),
-    
-    # Active voting session with options and has_voted check
-    path('voting/active/', ActiveVotingSessionView.as_view(), name='active_voting_session'),
+    # List all active voting sessions OR get specific session detail
+    # GET /api/voting/sessions/  → all sessions
+    # GET /api/voting/sessions/?voting_session_id=1  → specific session with has_voted
+    path('voting/sessions/', VotingSessionListView.as_view(), name='voting_sessions'),
     
     # Cast vote
     path('voting/vote/', CastVoteView.as_view(), name='cast_vote'),

@@ -17,78 +17,24 @@ logger = logging.getLogger(__name__)
 
 class VotingSessionListView(APIView):
     """
-    List all active voting sessions.
+    List all active voting sessions OR get specific session details.
     Public endpoint - no authentication required.
     
-    This allows users to see which municipalities have active votings
-    and select which one to participate in.
+    Query params:
+        voting_session_id (optional): If provided, returns details for that specific session
+        
+    Examples:
+        GET /api/voting/sessions/  → Returns all active sessions
+        GET /api/voting/sessions/?voting_session_id=1  → Returns details for session #1
     """
     
     def get(self, request):
         """
-        Get list of all active voting sessions across all municipalities.
-        
-        Returns list of voting sessions with:
-        - Basic info (title, dates, type)
-        - Municipality details
-        - Whether voting is currently open
-        
-        Example:
-            GET /api/voting/sessions/
+        Get all active voting sessions OR specific session details.
         """
         try:
-            # Get all active voting sessions
-            voting_sessions = VotingSession.objects.filter(
-                is_active=True
-            ).select_related('municipality').prefetch_related('options')
+            voting_session_id = request.GET.get('voting_session_id')
             
-            # Only show sessions that are currently open (between start and end date)
-            open_sessions = [vs for vs in voting_sessions if vs.is_open()]
-            
-            if not open_sessions:
-                return Response({
-                    'message': 'No active voting sessions',
-                    'sessions': []
-                })
-            
-            # Serialize
-            serializer = VotingSessionSerializer(open_sessions, many=True)
-            
-            logger.info(f"Listed {len(open_sessions)} active voting session(s)")
-            
-            return Response({
-                'count': len(open_sessions),
-                'sessions': serializer.data
-            })
-            
-        except Exception as e:
-            logger.error(f"Error listing voting sessions: {e}", exc_info=True)
-            return Response({
-                'error': 'Failed to retrieve voting sessions',
-                'detail': str(e)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-class ActiveVotingSessionView(APIView):
-    """
-    Get active voting session with options and user's voting status.
-    
-    Returns:
-    - voting_session: active session details with options
-    - has_voted: boolean indicating if current user has already voted
-    """
-    
-    def get(self, request, voting_session_id=None):
-        """
-        Get currently active voting session.
-        
-        Query params:
-            voting_session_id (optional): Specific voting session to retrieve
-            
-        If voting_session_id is provided, returns that specific session (if active).
-        Otherwise, returns any active voting session for the authenticated citizen's municipality.
-        """
-        try:
             # Check if user is authenticated (has session)
             citizen_id = request.session.get('citizen_id')
             citizen = None
@@ -96,63 +42,71 @@ class ActiveVotingSessionView(APIView):
             if citizen_id:
                 try:
                     citizen = Citizen.objects.select_related('municipality').get(id=citizen_id)
+                    request.citizen = citizen  # Add to request for serializer
                     logger.info(f"Request from authenticated citizen: {citizen.id}")
                 except Citizen.DoesNotExist:
                     logger.warning(f"Citizen ID {citizen_id} in session but not found in DB")
             
-            # Get voting session
+            # CASE 1: Specific voting session requested
             if voting_session_id:
-                # Specific voting session requested
                 try:
-                    voting_session = VotingSession.objects.prefetch_related('options').get(
-                        id=voting_session_id,
-                        is_active=True
-                    )
+                    voting_session = VotingSession.objects.select_related('municipality').prefetch_related(
+                        'options'
+                    ).get(id=voting_session_id, is_active=True)
+                    
+                    # Check if voting is open
+                    if not voting_session.is_open():
+                        return Response({
+                            'error': 'Voting is closed',
+                            'detail': 'This voting session is not currently open',
+                            'start_date': voting_session.start_date,
+                            'end_date': voting_session.end_date
+                        }, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    # Use DetailSerializer to include has_voted
+                    serializer = VotingSessionDetailSerializer(voting_session, context={'request': request})
+                    
+                    logger.info(f"Voting session details retrieved: {voting_session.id} - {voting_session.title}")
+                    
+                    return Response(serializer.data)
+                    
                 except VotingSession.DoesNotExist:
                     return Response({
                         'error': 'Voting session not found',
                         'detail': f'No active voting session with id {voting_session_id}'
                     }, status=status.HTTP_404_NOT_FOUND)
+            
+            # CASE 2: List all active sessions
             else:
-                # Get any active voting session
-                # If citizen is authenticated, filter by their municipality
-                query = VotingSession.objects.prefetch_related('options').filter(is_active=True)
+                # Get all active voting sessions with proper prefetching
+                voting_sessions = VotingSession.objects.filter(
+                    is_active=True
+                ).select_related('municipality').prefetch_related('options')
                 
-                if citizen:
-                    query = query.filter(municipality=citizen.municipality)
+                # Only show sessions that are currently open (between start and end date)
+                open_sessions = [vs for vs in voting_sessions if vs.is_open()]
                 
-                voting_session = query.first()
-                
-                if not voting_session:
+                if not open_sessions:
                     return Response({
-                        'error': 'No active voting sessions',
-                        'detail': 'There are currently no active voting sessions'
-                    }, status=status.HTTP_404_NOT_FOUND)
-            
-            # Check if voting is actually open (between start and end dates)
-            if not voting_session.is_open():
+                        'message': 'No active voting sessions',
+                        'count': 0,
+                        'sessions': []
+                    })
+                
+                # Serialize (use basic serializer for list, not detail)
+                serializer = VotingSessionSerializer(open_sessions, many=True)
+                
+                logger.info(f"Listed {len(open_sessions)} active voting session(s)")
+                
                 return Response({
-                    'error': 'Voting is closed',
-                    'detail': 'This voting session is not currently open',
-                    'start_date': voting_session.start_date,
-                    'end_date': voting_session.end_date
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Serialize voting session
-            # Pass request in context so serializer can compute has_voted
-            if citizen:
-                request.citizen = citizen  # Add citizen to request for serializer
-            
-            serializer = VotingSessionDetailSerializer(voting_session, context={'request': request})
-            
-            logger.info(f"Active voting session retrieved: {voting_session.id} - {voting_session.title}")
-            
-            return Response(serializer.data)
+                    'count': len(open_sessions),
+                    'sessions': serializer.data
+                })
             
         except Exception as e:
-            logger.error(f"Error retrieving active voting session: {e}", exc_info=True)
+            logger.error(f"Error retrieving voting sessions: {e}", exc_info=True)
             return Response({
-                'error': 'Failed to retrieve voting session',
+                'error': 'Failed to retrieve voting sessions',
                 'detail': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
